@@ -37,7 +37,8 @@ async function getReportInfo() {
       clientID: CONFIG.clientId,
       appId: CONFIG.appId,
       object: CONFIG.reportObject,
-      list: '',
+      list: '_Στατιστική Μικτού Κέρδους',
+      form: 'Στατιστικά πωλήσεων',
       filters: filters
     }, {
       timeout: 30000,
