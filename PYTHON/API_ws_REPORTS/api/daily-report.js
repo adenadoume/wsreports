@@ -27,7 +27,8 @@ async function getReportInfo() {
     console.log('[API] Calling GetReportInfo...');
 
     // Date filter for testing: 12 Nov 2025
-    const filterDate = '2025-11-12';
+    // Format: YYYYMMDD
+    const filterDate = '20251112';
     const filters = `FDATE=${filterDate};TDATE=${filterDate}`;
 
     console.log('[API] Using date filter:', filters);
@@ -160,7 +161,11 @@ function createExcelFile(reportData) {
     console.log('[EXCEL] Creating Excel workbook...');
 
     // Create worksheet from data (no styling, no column removal)
-    const ws = XLSX.utils.json_to_sheet(reportData);
+    const ws = XLSX.utils.json_to_sheet(reportData, {
+      raw: false,
+      defval: '',
+      codepage: 65001 // UTF-8
+    });
 
     // Set basic column widths
     if (reportData.length > 0) {
@@ -172,10 +177,12 @@ function createExcelFile(reportData) {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'WS DAILY REPORT ΜΙΚΤΟ ΚΕΡΔΟΣ');
 
-    // Convert to buffer
+    // Convert to buffer with UTF-8 encoding
     const buffer = XLSX.write(wb, {
       bookType: 'xlsx',
-      type: 'buffer'
+      type: 'buffer',
+      bookSST: false,
+      compression: true
     });
 
     console.log('[EXCEL] Excel file created, size:', buffer.length, 'bytes');
