@@ -71,7 +71,7 @@ async function getReportInfo() {
 async function getReportData(reqID, pagenum = 1) {
   try {
     console.log(`[API] Calling GetReportData (page ${pagenum})...`);
-    
+
     const response = await axios.post(CONFIG.softoneUrl, {
       service: 'getReportData',
       clientID: CONFIG.clientId,
@@ -99,28 +99,26 @@ async function getReportData(reqID, pagenum = 1) {
 function parseHTMLReport(htmlData) {
   try {
     console.log('[PARSE] Parsing HTML report...');
-    
-    // Extract table rows from HTML
-    const tableRegex = /<table[^>]*>(.+?)<\/table>/is;
-    const rowRegex = /<tr[^>]*>(.+?)<\/tr>/is;
-    const cellRegex = /<td[^>]*>(.+?)<\/td>/i;
-    
-    const tableMatch = htmlData.match(tableRegex);
-    if (!tableMatch) {
-      throw new Error('No table found in HTML report');
-    }
 
-    const tableContent = tableMatch[1];
-    const rows = tableContent.match(/<tr[^>]*>(.+?)<\/tr>/gi) || [];
-    
-    console.log(`[PARSE] Found ${rows.length} rows`);
+    // Extract table rows from HTML
+    const rows = htmlData.match(/<tr[^>]*>(.+?)<\/tr>/gis) || [];
+
+    console.log(`[PARSE] Found ${rows.length} total rows`);
 
     const data = [];
-    let isHeader = true;
     let headers = [];
+    let headerFound = false;
 
     rows.forEach((row, index) => {
-      const cells = row.match(/<td[^>]*>(.+?)<\/td>/gi) || [];
+      // Extract all cells (both td and th)
+      const cells = row.match(/<t[dh][^>]*>(.+?)<\/t[dh]>/gi) || [];
+
+      // Skip rows with colspan (title rows)
+      if (row.includes('colspan')) {
+        console.log(`[PARSE] Skipping title row ${index}`);
+        return;
+      }
+
       const rowData = cells.map(cell => {
         // Remove HTML tags and decode entities
         return cell
@@ -132,12 +130,13 @@ function parseHTMLReport(htmlData) {
           .trim();
       });
 
-      if (isHeader && rowData.length > 0) {
+      // First row without colspan is the header
+      if (!headerFound && rowData.length > 1) {
         headers = rowData;
-        isHeader = false;
+        headerFound = true;
         console.log('[PARSE] Headers:', headers);
-      } else if (rowData.length > 0 && rowData.some(cell => cell.length > 0)) {
-        // Skip empty rows
+      } else if (headerFound && rowData.length > 0 && rowData.some(cell => cell.length > 0)) {
+        // Convert to object
         const rowObj = {};
         headers.forEach((header, i) => {
           rowObj[header] = rowData[i] || '';
@@ -206,6 +205,7 @@ async function sendEmailReport(excelBuffer) {
     console.log('[EMAIL] SMTP connection verified');
 
     // Format date as DDMMMYY (e.g., 26NOV25)
+    // Uses current date for email/filename
     const now = new Date();
     const day = String(now.getDate()).padStart(2, '0');
     const monthNames = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN',
