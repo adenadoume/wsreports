@@ -159,20 +159,12 @@ function createExcelFile(reportData) {
   try {
     console.log('[EXCEL] Creating Excel workbook...');
 
-    // Remove first column from all rows
-    const cleanedData = reportData.map(row => {
-      const newRow = { ...row };
-      const firstKey = Object.keys(newRow)[0];
-      delete newRow[firstKey];
-      return newRow;
-    });
-
-    // Create worksheet from cleaned data
-    const ws = XLSX.utils.json_to_sheet(cleanedData);
+    // Create worksheet from data (no styling, no column removal)
+    const ws = XLSX.utils.json_to_sheet(reportData);
 
     // Set basic column widths
-    if (cleanedData.length > 0) {
-      const headers = Object.keys(cleanedData[0]);
+    if (reportData.length > 0) {
+      const headers = Object.keys(reportData[0]);
       ws['!cols'] = headers.map(() => ({ wch: 20 }));
     }
 
