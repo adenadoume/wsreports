@@ -82,7 +82,12 @@ async function getReportData(reqID, pagenum = 1) {
       pagenum: pagenum
     }, {
       timeout: 30000,
-      headers: { 'Content-Type': 'application/json' }
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept-Charset': 'utf-8'
+      },
+      responseType: 'text',
+      responseEncoding: 'utf8'
     });
 
     if (response.data.error) {
